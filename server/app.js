@@ -1,41 +1,26 @@
-var createError = require('http-errors');
-var express = require('express');
+const express = require('express')
 var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const app = express()
+const port = 3000
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+app.use('/static', express.static(path.join(__dirname, 'public')))
 
-var app = express();
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+app.get('/', (req, res) => {
+  res.send('hello world')
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+const server = app.listen(port, () => {
+  console.log(`App listening on port ${port}!`);
 });
 
-module.exports = app;
+const io = require('socket.io')(server)
+
+io.on('connection', function(socket) {
+  console.log("socket id: " + socket.id);
+  socket.on('SEND_MESSAGE', function(data) {
+    if(data.message_type == "goodnight") {
+      data.message = "http://localhost:3000/static/images/goodnight.jpg"
+    }
+    io.emit('MESSAGE', data)
+  })
+})
